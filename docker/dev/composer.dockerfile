@@ -1,9 +1,9 @@
 FROM composer:2
 
 # environment arguments
-ARG UID
-ARG GID
-ARG USER
+ARG UID=1000
+ARG GID=1000
+ARG USER=appuser
 
 ENV UID=${UID}
 ENV GID=${GID}

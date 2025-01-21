@@ -1,0 +1,10 @@
+./.git
+./src/node_modules
+./src/vendor
+./src/storage/logs
+./src/storage/framework
+./src/.env
+./src/composer.json
+./src/composer.lock
+./src/package.json
+./src/package.lock.json
