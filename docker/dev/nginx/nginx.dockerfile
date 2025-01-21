@@ -1,9 +1,9 @@
 FROM nginx:stable-alpine
 
 # environment arguments
-ARG UID
-ARG GID
-ARG USER
+ARG UID=1000
+ARG GID=1000
+ARG USER=appuser
 
 ENV UID=${UID}
 ENV GID=${GID}
@@ -17,10 +17,10 @@ RUN addgroup -g ${GID} --system ${USER}
 RUN adduser -G ${USER} --system -D -s /bin/sh -u ${UID} ${USER}
 
 # Modify nginx configuration to use the new user's priviledges for starting it.
-RUN sed -i "s/user nginx/user '${USER}'/g" /etc/nginx/nginx.conf
+RUN sed -i "s/user nginx/user '${USER}'/g" /etc/nginx/default.conf
 
 # Copies nginx configurations to override the default.
-ADD ./nginx/*.conf /etc/nginx/conf.d/
+ADD *.conf /etc/nginx/conf.d/
 
 # Make html directory
 RUN mkdir -p /var/www/html

@@ -1,5 +1,3 @@
-version: '3'
-
 networks:
   laravel:
 
@@ -18,7 +16,8 @@ services:
       - 8000:8000
     volumes:
       - ./src:/var/www/html
-      - .env:/var/www/html/.env
+    env_file:
+      - src/.env
     depends_on:
       - php
       - redis
@@ -43,7 +42,8 @@ services:
       - ":9000"
     volumes:
       - ./src:/var/www/html
-      - .env:/var/www/html/.env
+    env_file:
+      - src/.env
     networks:
       - laravel
 
@@ -63,9 +63,11 @@ services:
       SERVICE_NAME: mysql
     volumes:
       - ./docker/mysql:/var/lib/mysql
+    env_file:
+      - src/.env
     networks:
       - laravel
-    
+
   redis:
     image: redis:alpine
     container_name: redis
@@ -86,7 +88,8 @@ services:
     container_name: laravel-cron
     volumes:
       - ./src:/var/www/html
-      - .env:/var/www/html/.env
+    env_file:
+      - src/.env
     depends_on:
       - mysql
     working_dir: /var/www/html
@@ -105,7 +108,8 @@ services:
     container_name: laravel-queue
     volumes:
       - ./src:/var/www/html
-      - .env:/var/www/html/.env
+    env_file:
+      - src/.env
     depends_on:
       - mysql
     working_dir: /var/www/html
@@ -116,7 +120,7 @@ services:
   mailhog:
     image: mailhog/mailhog:latest
     container_name: mailhog
-    logging: 
+    logging:
       driver: 'none'
     ports:
       - 1025:1025
@@ -135,6 +139,8 @@ services:
       PMA_PORT: ${DB_PORT}
     depends_on:
       - mysql
+    env_file:
+      - src/.env
     ports:
       - 8888:80
     networks:
@@ -151,7 +157,8 @@ services:
     container_name: laravel-migrate-seed
     volumes:
       - ./src:/var/www/html
-      - .env:/var/www/html/.env
+    env_file:
+      - src/.env
     depends_on:
       - mysql
     profiles: ["migrate-seed"]
@@ -175,7 +182,8 @@ services:
     container_name: composer
     volumes:
       - ./src:/var/www/html
-      - .env:/var/www/html/.env
+    env_file:
+      - src/.env
     working_dir: /var/www/html
     depends_on:
       - php
@@ -196,7 +204,8 @@ services:
     container_name: artisan
     volumes:
       - ./src:/var/www/html
-      - .env:/var/www/html/.env
+    env_file:
+      - src/.env
     depends_on:
       - mysql
     working_dir: /var/www/html
@@ -210,7 +219,6 @@ services:
     container_name: npm
     volumes:
       - ./src:/var/www/html
-      - .env:/var/www/html/.env
     ports:
       - 3000:3000
       - 3001:3001

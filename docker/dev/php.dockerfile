@@ -1,9 +1,9 @@
 FROM php:8.1-fpm-alpine
 
 # environment arguments
-ARG UID
-ARG GID
-ARG USER
+ARG UID=1000
+ARG GID=1000
+ARG USER=appuser
 
 ENV UID=${UID}
 ENV GID=${GID}
