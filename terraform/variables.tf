@@ -1,9 +1,35 @@
 variable "resource_group_location" {
-  type = string                     # The type of the variable, in this case a string
-  default = "westeurope"                 # Default value for the variable
+  type = string
+  default = "westeurope"
 }
 
 variable "resource_group_name" {
-  type = string                     # The type of the variable, in this case a string
-  default = "LynxMedia"                 # Default value for the variable
+  type = string
+  default = "LynxMedia"
+}
+
+variable "azure_subscription" {
+  type = string
+  sensitive = true
+  nullable = false
+}
+
+variable "docker_registry_server" {
+  type = string
+  default = "index.docker.io"
+}
+
+variable "docker_registry_username" {
+  type = string
+  sensitive = true
+}
+
+variable "docker_registry_password" {
+  type = string
+  sensitive = true
+}
+
+variable "nginx_image" {
+  type = string
+  nullable = false
 }
