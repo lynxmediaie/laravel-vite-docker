@@ -13,11 +13,11 @@ ENV USER=${USER}
 RUN delgroup dialout
 
 # Creating user and group
-RUN addgroup -g ${GID} --system ${USER}
-RUN adduser -G ${USER} --system -D -s /bin/sh -u ${UID} ${USER}
+RUN addgroup -g ${GID} --system ${USER} || true
+RUN adduser -G ${USER} --system -D -s /bin/sh -u ${UID} ${USER} || true
 
 # Modify nginx configuration to use the new user's priviledges for starting it.
-RUN sed -i "s/user nginx/user '${USER}'/g" /etc/nginx/default.conf
+RUN sed -i "s/user nginx/user '${USER}'/g" /etc/nginx/nginx.conf
 
 # Copies nginx configurations to override the default.
 ADD *.conf /etc/nginx/conf.d/

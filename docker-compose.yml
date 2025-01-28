@@ -4,7 +4,7 @@ networks:
 services:
   nginx:
     build:
-      context: ./docker
+      context: ./docker/dev/nginx
       dockerfile: nginx.dockerfile
       args:
         - UID=${UID:-1000}
@@ -13,25 +13,25 @@ services:
     restart: unless-stopped
     container_name: nginx
     ports:
-      - 8000:8000
+      - 8080:80
     volumes:
       - ./src:/var/www/html
     env_file:
       - src/.env
     depends_on:
       - php
-      - redis
-      - mysql
-      - laravel-queue
-      - laravel-cron
-      - phpmyadmin
-      - mailhog
+#      - redis
+#      - mysql
+#      - laravel-queue
+#      - laravel-cron
+#      - phpmyadmin
+#      - mailhog
     networks:
       - laravel
 
   php:
     build:
-      context: ./docker
+      context: ./docker/dev
       dockerfile: php.dockerfile
       args:
         - UID=${UID:-1000}
@@ -43,112 +43,112 @@ services:
     volumes:
       - ./src:/var/www/html
     env_file:
-      - src/.env
+      - ./src/.env
     networks:
       - laravel
 
-  mysql:
-    image: mariadb:10.6
-    container_name: mysql
-    restart: unless-stopped
-    tty: true
-    ports:
-      - 3307:3306
-    environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      SERVICE_TAGS: dev
-      SERVICE_NAME: mysql
-    volumes:
-      - ./docker/mysql:/var/lib/mysql
-    env_file:
-      - src/.env
-    networks:
-      - laravel
+#  mysql:
+#    image: mysql:5.5
+#    container_name: mysql
+#    restart: unless-stopped
+#    tty: true
+#    ports:
+#      - 3307:3306
+#    environment:
+#      MYSQL_DATABASE: ${DB_DATABASE}
+#      MYSQL_USER: ${DB_USERNAME}
+#      MYSQL_PASSWORD: ${DB_PASSWORD}
+#      MYSQL_ROOT_PASSWORD: 'zEa&qQJ0JPBqIgKih^K24c0JwPt*sc'
+#      SERVICE_TAGS: dev
+#      SERVICE_NAME: mysql
+#    volumes:
+#      - ./docker/dev/mysql:/var/lib/mysql
+#    env_file:
+#      - ./src/.env
+#    networks:
+#      - laravel
 
-  redis:
-    image: redis:alpine
-    container_name: redis
-    restart: unless-stopped
-    ports:
-      - 6380:6379
-    networks:
-      - laravel
+#  redis:
+#    image: redis:alpine
+#    container_name: redis
+#    restart: unless-stopped
+#    ports:
+#      - 6380:6379
+#    networks:
+#      - laravel
 
-  laravel-cron:
-    build:
-      context: ./docker
-      dockerfile: php.dockerfile
-      args:
-        - UID=${UID:-1000}
-        - GID=${GID:-1000}
-        - USER=${USER:-laravel}
-    container_name: laravel-cron
-    volumes:
-      - ./src:/var/www/html
-    env_file:
-      - src/.env
-    depends_on:
-      - mysql
-    working_dir: /var/www/html
-    entrypoint: ['php', '/var/www/html/artisan', 'schedule:work']
-    networks:
-      - laravel
+#  laravel-cron:
+#    build:
+#      context: ./docker/dev
+#      dockerfile: php.dockerfile
+#      args:
+#        - UID=${UID:-1000}
+#        - GID=${GID:-1000}
+#        - USER=${USER:-laravel}
+#    container_name: laravel-cron
+#    volumes:
+#      - ./src:/var/www/html
+#    env_file:
+#      - src/.env
+#    depends_on:
+#      - mysql
+#    working_dir: /var/www/html
+#    entrypoint: ['php', '/var/www/html/artisan', 'schedule:work']
+#    networks:
+#      - laravel
 
-  laravel-queue:
-    build:
-      context: ./docker
-      dockerfile: php.dockerfile
-      args:
-        - UID=${UID:-1000}
-        - GID=${GID:-1000}
-        - USER=${USER:-laravel}
-    container_name: laravel-queue
-    volumes:
-      - ./src:/var/www/html
-    env_file:
-      - src/.env
-    depends_on:
-      - mysql
-    working_dir: /var/www/html
-    entrypoint: ['php', '/var/www/html/artisan', 'queue:work']
-    networks:
-      - laravel
+#  laravel-queue:
+#    build:
+#      context: ./docker/dev
+#      dockerfile: php.dockerfile
+#      args:
+#        - UID=${UID:-1000}
+#        - GID=${GID:-1000}
+#        - USER=${USER:-laravel}
+#    container_name: laravel-queue
+#    volumes:
+#      - ./src:/var/www/html
+#    env_file:
+#      - src/.env
+#    depends_on:
+#      - mysql
+#    working_dir: /var/www/html
+#    entrypoint: ['php', '/var/www/html/artisan', 'queue:work']
+#    networks:
+#      - laravel
 
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: mailhog
-    logging:
-      driver: 'none'
-    ports:
-      - 1025:1025
-      - 8025:8025
-    networks:
-      - laravel
+#  mailhog:
+#    image: mailhog/mailhog:latest
+#    container_name: mailhog
+#    logging:
+#      driver: 'none'
+#    ports:
+#      - 1025:1025
+#      - 8025:8025
+#    networks:
+#      - laravel
 
-  phpmyadmin:
-    image: phpmyadmin:5.2.0
-    container_name: phpmyadmin
-    environment:
-      PMA_ARBITRARY: 1
-      PMA_HOST: ${DB_HOST}
-      PMA_USER: ${DB_USERNAME}
-      PMA_PASSWORD: ${DB_PASSWORD}
-      PMA_PORT: ${DB_PORT}
-    depends_on:
-      - mysql
-    env_file:
-      - src/.env
-    ports:
-      - 8888:80
-    networks:
-      - laravel
+#  phpmyadmin:
+#    image: phpmyadmin:5.2.0
+#    container_name: phpmyadmin
+#    environment:
+#      PMA_ARBITRARY: 1
+#      PMA_HOST: ${DB_HOST}
+#      PMA_USER: ${DB_USERNAME}
+#      PMA_PASSWORD: ${DB_PASSWORD}
+#      PMA_PORT: ${DB_PORT}
+#    depends_on:
+#      - mysql
+#    env_file:
+#      - src/.env
+#    ports:
+#      - 8888:80
+#    networks:
+#      - laravel
 
   laravel-migrate-seed:
     build:
-      context: ./docker
+      context: ./docker/dev
       dockerfile: php.dockerfile
       args:
         - UID=${UID:-1000}
@@ -173,7 +173,7 @@ services:
 
   composer:
     build:
-      context: ./docker
+      context: ./docker/dev
       dockerfile: composer.dockerfile
       args:
         - UID=${UID:-1000}
@@ -195,7 +195,7 @@ services:
 
   artisan:
     build:
-      context: ./docker
+      context: ./docker/dev
       dockerfile: php.dockerfile
       args:
         - UID=${UID:-1000}
