@@ -29,7 +29,7 @@ variable "docker_registry_password" {
   sensitive = true
 }
 
-variable "nginx_image" {
+variable "nginx_tag" {
   type = string
   nullable = false
 }

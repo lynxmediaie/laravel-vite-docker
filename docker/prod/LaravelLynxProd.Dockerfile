@@ -1,3 +1,25 @@
+# Use a lightweight Linux base image
+FROM debian:latest as ddns
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    curl \
+    cron \
+    vim \
+    --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
+# Create the working directory and script
+WORKDIR /duckdns
+
+# Add the script content
+RUN echo "#!/bin/bash" > duck.sh && \
+    echo "echo url=\"https://www.duckdns.org/update?domains=lynxmedia&token=16c33c36-dc01-46c4-8e1a-3ca4de004fbe&ip=\" | curl -k -o /duckdns/duck.log -K -" >> duck.sh && \
+    chmod 700 duck.sh
+
+# Set up the crontab entry
+RUN echo "*/5 * * * * /duckdns/duck.sh >/dev/null 2>&1" > /etc/cron.d/duckdns && \
+    chmod 0644 /etc/cron.d/duckdns
+
 # Stage 1: Build
 FROM php:8.2-fpm-alpine AS builder
 
@@ -38,20 +60,6 @@ RUN apk update && apk add --no-cache \
 
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
     apk add --no-cache gnu-libiconv
-
-
-
-
-#RUN wget https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz && \
-#    tar -xvzf libiconv-1.17.tar.gz && \
-#    cd libiconv-1.17 && \
-#    ./configure --prefix=/usr && \
-#    make && \
-#    make install && \
-#    cd .. && \
-#    rm -rf libiconv-1.17 libiconv-1.17.tar.gz
-
-
 
 # Rebuild PHP with required extensions
 RUN docker-php-source extract && \
@@ -96,7 +104,24 @@ FROM nginx:1.25-alpine AS production
 WORKDIR /var/www/html
 
 # Install necessary dependencies
-RUN apk add --no-cache bash curl libpng libjpeg-turbo libwebp libxpm freetype icu-libs libxml2 openrc supervisor oniguruma argon2-dev
+RUN apk update && apk add --no-cache \
+    bash \
+    curl \
+    libpng \
+    libjpeg-turbo \
+    libwebp \
+    libxpm \
+    freetype \
+    icu-libs \
+    libxml2 \
+    oniguruma \
+    openrc \
+    argon2-dev \
+    python3 \
+    certbot \
+    supervisor \
+    py3-pip \
+    dcron
 
 RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
     apk add --no-cache gnu-libiconv
@@ -110,6 +135,12 @@ COPY --from=builder /var/www/html /var/www/html
 # Copy built frontend assets
 COPY --from=builder /var/www/html/public/build /var/www/html/public/build
 
+# Copy DuckDNS script and crontab
+COPY --from=ddns /duckdns /duckdns
+COPY --from=ddns /etc/cron.d/duckdns /etc/cron.d/duckdns
+
+RUN crontab /etc/cron.d/duckdns
+
 RUN which php-fpm || (echo "PHP-FPM not installed!" && exit 1)
 
 # Configure Nginx
@@ -120,10 +151,17 @@ COPY /docker/prod/supervisord.conf /etc/supervisord.conf
 
 COPY /docker/prod/php-fpm.conf /usr/local/etc/php-fpm.conf
 
+# Copy SSL certificate files
+COPY /docker/prod/privkey.pem /etc/letsencrypt/live/lynxmedia.ie/privkey.pem
+COPY /docker/prod/fullchain.pem /etc/letsencrypt/live/lynxmedia.ie/fullchain.pem
+
+RUN echo "0 0,12 * * * certbot renew --quiet && nginx -s reload" > /etc/cron.d/certbot-renew \
+    && chmod 0644 /etc/cron.d/certbot-renew \
+    && crontab /etc/cron.d/certbot-renew
+
 RUN mkdir -p /var/log/php
 RUN  chown -R nginx:nginx /var/log/php
 RUN  chmod -R 755 /var/log/php
-
 
 # Create Nginx cache directories and set permissions
 RUN mkdir -p /var/cache/nginx /var/run && \
@@ -146,9 +184,8 @@ RUN mkdir /var/log/supervisor && \
     chown -R root:root /var/log/supervisor && \
     chmod -R 755 /var/log/supervisor
 
-
 # Expose port 80
-EXPOSE 80
+EXPOSE 80 443
 
-# Start Supervisor to manage PHP-FPM and Nginx
+# Start Supervisor and Cron to manage PHP-FPM, Nginx, and DuckDNS
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
