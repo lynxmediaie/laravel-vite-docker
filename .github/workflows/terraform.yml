@@ -19,9 +19,28 @@ jobs:
 
       - name: Install GitVersion
         run: |
-          LATEST_VERSION=$(curl -s https://api.github.com/repos/GitTools/GitVersion/releases/latest | grep "tag_name" | cut -d '"' -f 4)
-          wget -qO- https://github.com/GitTools/GitVersion/releases/download/$LATEST_VERSION/gitversion-linux.tar.gz | tar xz
-          sudo mv ./gitversion /usr/local/bin/gitversion
+          set -e  # Exit on error
+          
+          # Define a stable fallback version
+          FALLBACK_VERSION="5.12.0"
+
+          # Fetch the latest release version
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/GitTools/GitVersion/releases/latest | jq -r ".tag_name" || echo $FALLBACK_VERSION)
+
+          echo "Using GitVersion version: $LATEST_VERSION"
+
+          # Define the download URL
+          DOWNLOAD_URL="https://github.com/GitTools/GitVersion/releases/download/$LATEST_VERSION/gitversion-linux.tar.gz"
+
+          # Check if the URL exists before downloading
+          if curl --output /dev/null --silent --head --fail "$DOWNLOAD_URL"; then
+            wget -qO- "$DOWNLOAD_URL" | tar xz
+            sudo mv ./gitversion /usr/local/bin/gitversion
+          else
+            echo "Error: GitVersion binary not found at $DOWNLOAD_URL"
+            exit 1
+          fi
+
 
 
       - name: Generate version
