@@ -61,9 +61,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install git-version
         run: |
-          curl -sSL https://github.com/gittools/gitversion/releases/download/5.6.11/gitversion-linux-5.6.11.tar.gz | tar xz
+          curl -sSL https://github.com/GitTools/GitVersion/releases/download/5.6.11/gitversion-linux-5.6.11.tar.gz -o gitversion.tar.gz
+          tar -xzf gitversion.tar.gz
           sudo mv ./gitversion /usr/local/bin/gitversion
-
       - name: Generate version
         id: gitversion
         run: echo "VERSION=$(gitversion /showvariable SemVer)" >> $GITHUB_ENV
