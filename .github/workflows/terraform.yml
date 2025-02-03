@@ -19,8 +19,10 @@ jobs:
 
       - name: Install GitVersion
         run: |
-          wget -qO- https://github.com/GitTools/GitVersion/releases/latest/download/gitversion-linux.tar.gz | tar xz
+          LATEST_VERSION=$(curl -s https://api.github.com/repos/GitTools/GitVersion/releases/latest | grep "tag_name" | cut -d '"' -f 4)
+          wget -qO- https://github.com/GitTools/GitVersion/releases/download/$LATEST_VERSION/gitversion-linux.tar.gz | tar xz
           sudo mv ./gitversion /usr/local/bin/gitversion
+
 
       - name: Generate version
         id: gitversion
