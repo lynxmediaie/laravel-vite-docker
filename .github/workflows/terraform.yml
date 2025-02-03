@@ -54,9 +54,27 @@ permissions:
   contents: read
 
 jobs:
+  build:
+    name: 'Dockerization'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install git-version
+        run: |
+          curl -sSL https://github.com/gittools/gitversion/releases/download/5.6.11/gitversion-linux-5.6.11.tar.gz | tar xz
+          sudo mv ./gitversion /usr/local/bin/gitversion
+
+      - name: Generate version
+        id: gitversion
+        run: echo "VERSION=$(gitversion /showvariable SemVer)" >> $GITHUB_ENV
+
+      - name: Build the Docker image
+        run: docker build --no-cache -t lynxmedia/prod-nginx:${{ env.VERSION }} --build-arg ENV_FILE_PATH=src/.env -f docker/prod/LaravelLynxProd.Dockerfile .
+
   terraform:
     name: 'Terraform'
     runs-on: ubuntu-latest
+    needs: build
     environment: production
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
