@@ -13,10 +13,10 @@ jobs:
   build:
     name: 'Dockerization'
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        environment: production
 
       - name: Log in to Docker Hub
         run: |
