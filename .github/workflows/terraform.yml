@@ -74,20 +74,21 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
         with:
-          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+          terraform_version: 'latest'
 
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Plan
+      - name: Initialize Terraform (Local Backend)
         run: |
-          terraform plan -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" \
-            -var "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" \
-            -var "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}" \
-            -var "nginx_tag=${{ env.VERSION }}"
+          cd terraform  # Navigate to Terraform directory in the repo
+          terraform init -backend=false  # Use local state
+
+#      - name: Terraform Plan
+#        run: |
+#          terraform plan -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" \
+#            -var "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" \
+#            -var "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}" \
+#            -var "nginx_tag=${{ env.VERSION }}"
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           terraform apply -auto-approve -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" \
             -var "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" \
