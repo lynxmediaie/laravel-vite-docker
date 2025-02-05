@@ -40,9 +40,9 @@ jobs:
         run: |
           REPO_NAME="${{ vars.DOCKER_REPO }}/prod-nginx"
           
-          docker build --no-cache -t $REPO_NAME:${{ vars.NEW_VERSION }} --build-arg ENV_FILE_PATH=src/.env -f docker/prod/LaravelLynxProd.Dockerfile .
+          docker build --no-cache -t $REPO_NAME:${{ env.NEW_VERSION }} --build-arg ENV_FILE_PATH=src/.env -f docker/prod/LaravelLynxProd.Dockerfile .
           
-          docker push $REPO_NAME:${{ vars.NEW_VERSION }}
+          docker push $REPO_NAME:${{ env.NEW_VERSION }}
 
       - name: Logout from Docker Hub
         run: docker logout
@@ -84,7 +84,7 @@ jobs:
           terraform plan -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" \
             -var "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" \
             -var "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}" \
-            -var "nginx_tag=${{ vars.VERSION }}"
+            -var "nginx_tag=${{ env.VERSION }}"
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -92,4 +92,4 @@ jobs:
           terraform apply -auto-approve -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" \
             -var "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" \
             -var "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}" \
-            -var "nginx_tag=${{ vars.VERSION }}"
+            -var "nginx_tag=${{ env.VERSION }}"
