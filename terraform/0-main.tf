@@ -12,7 +12,7 @@ terraform {
     }
   }
   backend "local" {
-    path = "/tmp/runner/work/laravel-vite-docker/laravel-vite-docker/terraform"
+    # path = "/tmp/runner/work/laravel-vite-docker/laravel-vite-docker/terraform"
     workspace_dir = "/tmp/runner/work/laravel-vite-docker/laravel-vite-docker/terraform"
   }
 }
