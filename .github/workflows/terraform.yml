@@ -78,8 +78,8 @@ jobs:
 
       - name: Initialize Terraform (Local Backend)
         run: |
-          cd terraform  # Navigate to Terraform directory in the repo
           terraform init -backend=false  # Use local state
+#          cd terraform  # Navigate to Terraform directory in the repo
 
 #      - name: Terraform Plan
 #        run: |
