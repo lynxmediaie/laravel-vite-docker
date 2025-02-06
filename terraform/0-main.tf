@@ -11,10 +11,6 @@ terraform {
       version = ">= 3.6"
     }
   }
-  backend "local" {
-    # path = "/tmp/runner/work/laravel-vite-docker/laravel-vite-docker/terraform"
-    workspace_dir = "/tmp/runner/work/laravel-vite-docker/laravel-vite-docker/terraform"
-  }
 }
 
 provider "azurerm" {

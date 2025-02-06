@@ -70,10 +70,11 @@ jobs:
           
           echo "Latest Tag: $LATEST_TAG"
           echo "nginx_tag=$LATEST_TAG" >> $GITHUB_ENV
-
+      - name: Locate the directory
+        run: cd /tmp/runner/work/laravel-vite-docker/laravel-vite-docker/terraform
       - name: Initialize Terraform (Local Backend)
         run: |
-          terraform init -backend=false  # Use local state
+          terraform init
 #          cd terraform  # Navigate to Terraform directory in the repo
 
 #      - name: Terraform Plan
@@ -86,6 +87,6 @@ jobs:
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" \
-            -var "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" \
-            -var "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}" \
+            -var "docker_registry_username=${{ secrets.DOCKER_USERNAME }}" \
+            -var "docker_registry_password=${{ secrets.DOCKER_PASSWORD }}" \
             -var "nginx_tag=${{ env.VERSION }}"
