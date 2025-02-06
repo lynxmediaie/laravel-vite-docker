@@ -71,11 +71,6 @@ jobs:
           echo "Latest Tag: $LATEST_TAG"
           echo "nginx_tag=$LATEST_TAG" >> $GITHUB_ENV
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: 'latest'
-
       - name: Initialize Terraform (Local Backend)
         run: |
           terraform init -backend=false  # Use local state
