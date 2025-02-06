@@ -87,6 +87,6 @@ jobs:
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" \
-            -var "docker_registry_username=${{ secrets.DOCKER_USERNAME }}" \
-            -var "docker_registry_password=${{ secrets.DOCKER_PASSWORD }}" \
+            -var "docker_registry_username=${{ secrets.DOCKER_REGISTRY_USERNAME }}" \
+            -var "docker_registry_password=${{ secrets.DOCKER_REGISTRY_PASSWORD }}" \
             -var "nginx_tag=${{ env.VERSION }}"
