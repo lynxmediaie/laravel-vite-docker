@@ -87,8 +87,6 @@ COPY ./../../src /var/www/html
 # Install backend dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-RUN php artisan migrate --force
-
 # Install frontend dependencies and build
 RUN npm install && npm run build
 
