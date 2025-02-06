@@ -11,6 +11,9 @@ terraform {
       version = ">= 3.6"
     }
   }
+  backend "local" {
+    path = "/terraform"
+  }
 }
 
 provider "azurerm" {
