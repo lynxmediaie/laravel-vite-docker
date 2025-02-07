@@ -22,7 +22,6 @@ resource "azurerm_container_group" "laravel" {
     }
   }
 
-
   image_registry_credential {
     server = var.docker_registry_server
     username = var.docker_registry_username

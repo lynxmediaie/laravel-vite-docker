@@ -1,95 +1,92 @@
-# This workflow installs the latest version of Terraform CLI and configures the Terraform CLI configuration file
-# with an API token for Terraform Cloud (app.terraform.io). On pull request events, this workflow will run
-# `terraform init`, `terraform fmt`, and `terraform plan` (speculative plan via Terraform Cloud). On push events
-# to the "main" branch, `terraform apply` will be executed.
-#
-# Documentation for `hashicorp/setup-terraform` is located here: https://github.com/hashicorp/setup-terraform
-#
-# To use this workflow, you will need to complete the following setup steps.
-#
-# 1. Create a `0-main.tf` file in the root of this repository with the `remote` backend and one or more resources defined.
-#   Example `0-main.tf`:
-#     # The configuration for the `remote` backend.
-#     terraform {
-#       backend "remote" {
-#         # The name of your Terraform Cloud organization.
-#         organization = "example-organization"
-#
-#         # The name of the Terraform Cloud workspace to store Terraform state files in.
-#         workspaces {
-#           name = "example-workspace"
-#         }
-#       }
-#     }
-#
-#     # An example resource that does nothing.
-#     resource "null_resource" "example" {
-#       triggers = {
-#         value = "A example resource that does nothing!"
-#       }
-#     }
-#
-#
-# 2. Generate a Terraform Cloud user API token and store it as a GitHub secret (e.g. TF_API_TOKEN) on this repository.
-#   Documentation:
-#     - https://www.terraform.io/docs/cloud/users-teams-organizations/api-tokens.html
-#     - https://help.github.com/en/actions/configuring-and-managing-workflows/creating-and-storing-encrypted-secrets
-#
-# 3. Reference the GitHub secret in step using the `hashicorp/setup-terraform` GitHub Action.
-#   Example:
-#     - name: Setup Terraform
-#       uses: hashicorp/setup-terraform@v1
-#       with:
-#         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-
-name: 'Terraform'
+name: 'Terraform Deployment'
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
 
 jobs:
+  build:
+    name: 'Dockerization'
+    runs-on: self-hosted
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        run: |
+          echo "${{ secrets.DOCKER_REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_REGISTRY_USERNAME }}" --password-stdin
+
+      - name: Get Latest Image Version
+        id: get_version
+        run: |
+          REPO_NAME="${{ vars.DOCKER_REPO }}/prod-nginx"
+          LATEST_VERSION=$(curl -s "https://hub.docker.com/v2/repositories/$REPO_NAME/tags" | jq -r '[.results[].name | select(. | test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))] | sort_by(split(".") | map(tonumber)) | last' || echo "1.0.0")
+          
+          # Increment the version (e.g., 1.0.0 -> 1.0.1)
+          NEW_VERSION=$(echo $LATEST_VERSION | awk -F. '{print $1"."$2"."$3+1}')
+          
+          echo "Latest Version: $LATEST_VERSION"
+          echo "New Version: $NEW_VERSION"
+          
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Build and Push Docker Image
+        run: |
+          REPO_NAME="${{ vars.DOCKER_REPO }}/prod-nginx"
+          
+          docker build --no-cache -t $REPO_NAME:${{ env.NEW_VERSION }} --build-arg ENV_FILE_PATH=src/.env -f docker/prod/LaravelLynxProd.Dockerfile .
+          
+          docker push $REPO_NAME:${{ env.NEW_VERSION }}
+
+      - name: Logout from Docker Hub
+        run: docker logout
+
   terraform:
     name: 'Terraform'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    needs: build
     environment: production
 
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
         working-directory: ./terraform/
 
     steps:
-    # Checkout the repository to the GitHub Actions runner
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
-      with:
-        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      - name: Fetch Latest NGINX Tag
+        id: fetch_nginx_tag
+        run: |
+          LATEST_TAG=$(curl -s https://hub.docker.com/v2/repositories/${{ vars.DOCKER_REPO }}/prod-nginx/tags \
+            | jq -r '[.results[].name | select(. | test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))] | sort_by(split(".") | map(tonumber)) | last')
+          
+          echo "Latest Tag: $LATEST_TAG"
+          echo "nginx_tag=$LATEST_TAG" >> $GITHUB_ENV
+      - name: Locate the directory
+        run: cd /tmp/runner/work/laravel-vite-docker/laravel-vite-docker/terraform
+      - name: Initialize Terraform (Local Backend)
+        run: |
+          terraform init
+#          cd terraform  # Navigate to Terraform directory in the repo
 
-    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Terraform Init
-      run: terraform init
+#      - name: Terraform Plan
+#        run: |
+#          terraform plan -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" \
+#            -var "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" \
+#            -var "DOCKER_PASSWORD=${{ secrets.DOCKER_PASSWORD }}" \
+#            -var "nginx_tag=${{ env.VERSION }}"
 
-    # Checks that all Terraform configuration files adhere to a canonical format
-#    - name: Terraform Format
-#      run: terraform fmt -check
-
-    # Generates an execution plan for Terraform
-    - name: Terraform Plan
-      run: terraform plan -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" -var "docker_registry_username=${{ secrets.DOCKER_REGISTRY_USERNAME }}" -var "docker_registry_password=${{ secrets.DOCKER_REGISTRY_PASSWORD }}" -var "nginx_tag=${{ secrets.NGINX_TAG }}"
-
-      # On push to "main", build or change infrastructure according to Terraform configuration files
-      # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
-    - name: Terraform Apply
-      if: github.ref == 'refs/heads/"main"' && github.event_name == 'push'
-      run: terraform apply -auto-approve -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" -var "docker_registry_username=${{ secrets.DOCKER_REGISTRY_USERNAME }}" -var "docker_registry_password=${{ secrets.DOCKER_REGISTRY_PASSWORD }}" -var "nginx_tag=${{ secrets.NGINX_TAG }}"
+      - name: Terraform Apply
+        run: |
+          terraform apply -auto-approve -var "azure_subscription=${{ secrets.AZURE_SUBSCRIPTION }}" \
+            -var "docker_registry_username=${{ secrets.DOCKER_REGISTRY_USERNAME }}" \
+            -var "docker_registry_password=${{ secrets.DOCKER_REGISTRY_PASSWORD }}" \
+            -var "nginx_tag=${{ env.VERSION }}"
