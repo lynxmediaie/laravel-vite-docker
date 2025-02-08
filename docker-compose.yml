@@ -20,6 +20,7 @@ services:
       - src/.env
     depends_on:
       - php
+      - npm
 #      - redis
 #      - mysql
 #      - laravel-queue
@@ -220,11 +221,11 @@ services:
     volumes:
       - ./src:/var/www/html
     ports:
-      - 3000:3000
-      - 3001:3001
+      - 3003:3000
+      - 5178:5173
     working_dir: /var/www/html
-    profiles: ["npm"]
-    entrypoint: ['npm']
+#    profiles: ["npm"]
+    entrypoint: ["sh", "-c", "npm install && npm run dev"]
     networks:
       - laravel
 
