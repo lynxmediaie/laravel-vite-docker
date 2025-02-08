@@ -12,5 +12,6 @@
     </head>
     <body>
         @inertia
+        <p class="">blablablab</p>
     </body>
 </html>
